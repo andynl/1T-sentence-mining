@@ -1,14 +1,19 @@
+import uuid
 import requests
 import json
 import re
+import schedule
+import time
 
 url = "https://lb.dioco.io/base_items_itemsJsonExport_6"
 url_anki_connect = 'http://localhost:8765'
 deck = 'deck:Netflix'
+model = 'LLNTemplate'
 
 # extract data from languange reactor
 def extract():
     try:
+        print("Extract data from language reactor")
         # headers = {"Content-Type": "application/json; charset=utf-8"}
 
         # data = {
@@ -38,6 +43,7 @@ def extract():
 
 def transform(reactor_search):
     try:
+        print("start transform")
         words = []
         for data in reactor_search:
             temp = {}
@@ -77,23 +83,29 @@ def transform(reactor_search):
             words.append(temp.copy())
             
         load(words)
+        print("end transform")
 
     except Exception as e:
         print(str(e))
 
 def load(words):
     try:
+        print("load data")
         matched = check_matched_word(words)
 
+        print("stores data to anki")
         for word in words:
             for new in matched:
                 if word["word"] == new:
-                    print("New word: ", new)
+                    # anki_store(word)
+                    print(word["word"])
+                    
 
     except Exception as e:
         print(str(e))
 
 def check_matched_word(words):
+    print("check matched word")
     anki_data = []
     anki = json.load(open("anki.json", "r"))
     for old in anki["result"]:
@@ -133,9 +145,58 @@ def anki_conn():
         print("Successfully stores anki data")
     except Exception as e:
         print(str(e))
+
+def anki_store(word):
+    try:
+        r = requests.post('http://127.0.0.1:8765', json={
+        "action": "addNote",
+        "version": 6,
+            "params": {
+            "note": {
+                "deckName": "Netflix",
+                "modelName": model,
+                "fields": {
+                    "Item Key": str(uuid.uuid4()),
+                    "Subtitle": word["sentence"],
+                    "Video Title": word["video_title"],
+                    "Lemma": word["word"],
+                    "Source": word["source"],
+                    "Audio Clip Media filename": ""
+                },
+                "options": {
+                    "allowDuplicate": False
+                },
+                "tags": [
+                    "TESTING"
+                ],
+                "audio": {
+                    "url": "https://assets.languagepod101.com/dictionary/japanese/audiomp3.php?kanji=猫&kana=ねこ",
+                    "filename": "yomichan_ねこ_猫.mp3",
+                    "skipHash": "7e2c2f954ef6051373ba916f000168dc",
+                    "fields": [
+                        "Audio Clip Media filename"
+                    ]
+                }
+            }
+        }
+        })
+
+        print("New word: ", word["word"])
+    except Exception as e:
+        print(str(e))
     
-try:
-    anki_conn()
-    extract()
-except Exception as e:
-    print(str(e))
+def job():
+    print("workers start")
+
+    try:
+        anki_conn()
+        extract()
+        print("successfully!")
+    except Exception as e:
+        print(str(e))
+
+schedule.every(1).minutes.do(job)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
