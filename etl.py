@@ -1,9 +1,11 @@
 import uuid
+from regex import W
 import requests
 import json
 import re
 import schedule
 import time
+import mysql.connector
 
 url = "https://lb.dioco.io/base_items_itemsJsonExport_6"
 url_anki_connect = 'http://localhost:8765'
@@ -25,8 +27,8 @@ def extract():
         #     "source": None,
         #     "loadMoreTimestamp": None,
         #     "loadMorePartNum": 1,
-        #     "userEmail": "#",
-        #     "diocoToken": "#"
+        #     "userEmail": "andy.natalino@gmail.com",
+        #     "diocoToken": "GIZ0WjEIZTESi4BwgaCr6adukhX3MPj4n0Hiyu7kBSOHY3FvIot3eV8GxZmnemr06eUjlrhhExblc5LaZLOFiQ=="
         # }
 
         # reactor = requests.post(url, 
@@ -57,6 +59,10 @@ def transform(reactor_search):
             sentence = sentence.strip()
             sentence = sentence.capitalize()
 
+            # sentence = re.sub(word, "<b>" + word + "</b>", sentence)
+
+            print(sentence)
+
             # sentence / subtitles 
             temp['sentence'] = sentence
             # word
@@ -72,7 +78,7 @@ def transform(reactor_search):
             # source
             temp['source'] = data["context"]["phrase"]["reference"]["source"]
             # media
-            temp['media'] = data["context"]["phrase"]["thumb_next"]["dataURL"]
+            temp['image'] = data["context"]["phrase"]["thumb_next"]["dataURL"]
             # tags
             # temp['tag'] = data["tags"]["0"]
             # audio
@@ -90,19 +96,59 @@ def transform(reactor_search):
 
 def load(words):
     try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            passwd="",
+            database="sentence_mining_db"
+        )
+
+        if db.is_connected():
+            print("Success connected to database")
+        
         print("load data")
         matched = check_matched_word(words)
 
         print("stores data to anki")
         for word in words:
             for new in matched:
+                # print(word["image"])
                 if word["word"] == new:
+
+                    # check data database
+                    cursor = db.cursor()
+                    sql = """INSERT INTO words (item_key, subtitle, word, definition, trans, video_id, video_title, date_created, source, image, type)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """
+                    values = [(
+                        str(uuid.uuid4()), 
+                        word["sentence"], 
+                        word["word"], 
+                        '-',
+                        word["translation"], 
+                        word["video_id"], 
+                        word["video_title"], 
+                        word["date_created"],
+                        word["source"],
+                        word["image"],
+                        'api',
+                    )]
+
+                    # print(values)
+
+                    for val in values:
+                        cursor.execute(sql, val)
+                        db.commit()
+                
+                    # print(word["word"])
                     # anki_store(word)
-                    print(word["word"])
+                    # print("***************************")
+                    # print(word["word"])
+                    # print("***************************")
                     
 
     except Exception as e:
-        print(str(e))
+        print("error", e)
 
 def check_matched_word(words):
     print("check matched word")
@@ -148,7 +194,7 @@ def anki_conn():
 
 def anki_store(word):
     try:
-        r = requests.post('http://127.0.0.1:8765', json={
+        r = requests.post(url_anki_connect, json={
         "action": "addNote",
         "version": 6,
             "params": {
@@ -158,16 +204,21 @@ def anki_store(word):
                 "fields": {
                     "Item Key": str(uuid.uuid4()),
                     "Subtitle": word["sentence"],
+                    "Word": word["word"],
+                    "Translation": word["translation"],
+                    "Video ID": word["video_id"],
                     "Video Title": word["video_title"],
+                    "Date Created": word["date_created"],
                     "Lemma": word["word"],
                     "Source": word["source"],
-                    "Audio Clip Media filename": ""
+                    "Next Image Media Filename": "",
+                    # "Audio Clip Media filename": ""
                 },
                 "options": {
                     "allowDuplicate": False
                 },
                 "tags": [
-                    "TESTING"
+                    "green"
                 ],
                 "audio": {
                     "url": "https://assets.languagepod101.com/dictionary/japanese/audiomp3.php?kanji=猫&kana=ねこ",
@@ -188,15 +239,15 @@ def anki_store(word):
 def job():
     print("workers start")
 
-    try:
-        anki_conn()
-        extract()
-        print("successfully!")
-    except Exception as e:
-        print(str(e))
+try:
+    anki_conn()
+    extract()
+    print("successfully!")
+except Exception as e:
+    print(str(e))
 
-schedule.every(1).minutes.do(job)
+# schedule.every(1).minutes.do(job)
 
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+# while True:
+#     schedule.run_pending()
+#     time.sleep(1)
