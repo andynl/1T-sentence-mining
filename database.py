@@ -1,3 +1,4 @@
+import datetime
 import mysql.connector
 import uuid
 
@@ -7,7 +8,7 @@ def connection():
             host="localhost",
             user="root",
             passwd="",
-            port="3307",
+            port="3306",
             database="sentence_mining_db"
         )
 
@@ -19,7 +20,7 @@ def get_word(word):
     try:
         db = connection()
         cursor = db.cursor(buffered=True)
-        sql = "SELECT * FROM words WHERE word = %s"
+        sql = "SELECT * FROM cards WHERE word = %s"
         values = [
             (word)
         ]
@@ -30,15 +31,16 @@ def get_word(word):
     except Exception as e:
         print('Get Word Error', str(e))
 
-def store_word(word):
+def store_word(word, item_key):
     try:
         db = connection()
         cursor = db.cursor(buffered=True)
-        sql = """INSERT INTO words (item_key, subtitle, word, definition, trans, video_id, video_title, date_created, source, image, type)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        sql = """INSERT INTO cards (item_key, subtitle, word, definition, trans, video_id, video_title, date_created, source, image, type, type_card, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
+        filename = "{}.png".format(item_key)
         values = [(
-            str(uuid.uuid4()), 
+            item_key, 
             word["sentence"], 
             word["word"], 
             '-',
@@ -47,8 +49,10 @@ def store_word(word):
             word["video_title"], 
             word["date_created"],
             word["source"],
-            word["image"],
+            filename,
             'api',
+            'text_sentence_card',
+            datetime.datetime.now()
         )]
 
         for val in values:
@@ -59,7 +63,7 @@ def store_word(word):
     except Exception as e:
         print('Store Word Error', str(e))
     
-# CREATE TABLE `words` (
+# CREATE TABLE `cards` (
 # 	id INT PRIMARY KEY AUTO_INCREMENT,
 # 	item_key varchar(255), 
 # 	subtitle varchar(255), 
@@ -74,3 +78,4 @@ def store_word(word):
 # 	type varchar(20),
 # 	created_at timestamp
 # ) ENGINE = InnoDB;
+

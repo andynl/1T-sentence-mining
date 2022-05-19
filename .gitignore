@@ -4,3 +4,4 @@ anki.json
 /.idea
 /.vscode
 .DS_STORE
+__pycache__

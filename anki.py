@@ -48,8 +48,9 @@ def anki_conn():
     except Exception as e:
         print(str(e))
 
-def anki_store(word):
+def anki_store(word, item_key):
     try:
+        filename = "{}.png".format(item_key)
         r = requests.post(url_anki_connect, json={
         "action": "addNote",
         "version": 6,
@@ -58,7 +59,7 @@ def anki_store(word):
                 "deckName": "Netflix",
                 "modelName": model,
                 "fields": {
-                    "Item Key": str(uuid.uuid4()),
+                    "Item Key": item_key,
                     "Subtitle": word["sentence"],
                     "Word": word["word"],
                     "Translation": word["translation"],
@@ -67,7 +68,7 @@ def anki_store(word):
                     "Date Created": word["date_created"],
                     "Lemma": word["word"],
                     "Source": word["source"],
-                    "Next Image Media Filename": "",
+                    "Next Image Media Filename": filename,
                     # "Audio Clip Media filename": ""
                 },
                 "options": {
@@ -76,18 +77,10 @@ def anki_store(word):
                 "tags": [
                     "green"
                 ],
-                "audio": {
-                    "url": "https://assets.languagepod101.com/dictionary/japanese/audiomp3.php?kanji=猫&kana=ねこ",
-                    "filename": "yomichan_ねこ_猫.mp3",
-                    "skipHash": "7e2c2f954ef6051373ba916f000168dc",
-                    "fields": [
-                        "Audio Clip Media filename"
-                    ]
-                }
             }
         }
         })
-
         print("New word: ", word["word"])
+        print(r.json())
     except Exception as e:
         print(str(e))
