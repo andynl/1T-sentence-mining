@@ -86,19 +86,22 @@ def load(words):
             print("Success connected to database")
         
         print("load data")
-        matched = check_matched_word(words)
+        # check data word in anki
+        anki_data = check_matched_word(words)
 
         print("stores data to anki")
         for word in words:
-            for new in matched:
-                if word["word"] == new:
+            # check word apabila sudah
+            for anki in anki_data:
+                # check apabila word di anki tidak ada dengan words
+                if word["word"] == anki:
                     record = get_word(word["word"])
+                    # jika data di db kosong maka akan insert word
                     if record == 0:
                         item_key = str(uuid.uuid4())
                         convert_base64_to_image(word["image"], item_key)
                         store_word(word, item_key)
                         anki_store(word, item_key)
-
 
     except Exception as e:
         print("ERROR Load", str(e))
