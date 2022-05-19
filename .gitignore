@@ -1,0 +1,6 @@
+anki.json
+.git
+.env
+/.idea
+/.vscode
+.DS_STORE
