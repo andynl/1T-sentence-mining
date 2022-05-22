@@ -3,7 +3,7 @@ import requests
 import json
 
 url_anki_connect = 'http://localhost:8765'
-deck = 'deck:Netflix'
+deck = 'deck:English::Language Reactor'
 model = 'LLNTemplate'
 
 def check_matched_word(words):
@@ -17,7 +17,7 @@ def check_matched_word(words):
     for new in words:
         reactor_data.append(new["word"])
 
-    return set(anki_data) ^ set(reactor_data)
+    return set(reactor_data) & set(anki_data)
 
 def anki_conn():
     try:
@@ -26,7 +26,7 @@ def anki_conn():
             'action': 'findNotes',
             'version': 6,
             'params': {
-                'query': deck,
+                'query': "deck:English",
             },
         }).json()
 
@@ -56,9 +56,10 @@ def anki_store(word, item_key):
         "version": 6,
             "params": {
             "note": {
-                "deckName": "Netflix",
+                "deckName": "English::Language Reactor",
                 "modelName": model,
                 "fields": {
+                    "Word Definition": "-",
                     "Item Key": item_key,
                     "Subtitle": word["sentence"],
                     "Word": word["word"],

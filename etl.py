@@ -35,8 +35,8 @@ def extract():
             headers=headers,
         ).json()
 
-        reactor_search = requests.get(reactor["data"]["file_path"]).json()
-        # reactor_search = requests.get("https://storage.googleapis.com/nlle-b0128.appspot.com/userExportCache/lln_json_items_2022-5-6_772588.json").json()    
+        # reactor_search = requests.get(reactor["data"]["file_path"]).json()
+        reactor_search = requests.get("https://storage.googleapis.com/nlle-b0128.appspot.com/userExportCache/lln_json_items_2022-5-6_772588.json").json()    
         transform(reactor_search)
 
     except Exception as e:
@@ -86,22 +86,27 @@ def load(words):
             print("Success connected to database")
         
         print("load data")
-        # check data word in anki
+        # check data word in anki, yang ada di anki
+        # cari yang gak match
         anki_data = check_matched_word(words)
+        print(anki_data)
 
         print("stores data to anki")
-        for word in words:
+        # for word in words:
+            # print(word["word"])
             # check word apabila sudah
-            for anki in anki_data:
+            # for anki in anki_data:
                 # check apabila word di anki tidak ada dengan words
-                if word["word"] == anki:
-                    record = get_word(word["word"])
+                # if word["word"] == anki:
+                    # record = get_word(word["word"])
                     # jika data di db kosong maka akan insert word
-                    if record == 0:
-                        item_key = str(uuid.uuid4())
-                        convert_base64_to_image(word["image"], item_key)
-                        store_word(word, item_key)
-                        anki_store(word, item_key)
+                    # if record == 0:
+                        # item_key = str(uuid.uuid4())
+                        # TODO move image to folder anki??
+                        # if fail recover
+                        # convert_base64_to_image(word["image"], item_key)
+                        # store_word(word, item_key)
+                        # anki_store(word, item_key)
 
     except Exception as e:
         print("ERROR Load", str(e))
